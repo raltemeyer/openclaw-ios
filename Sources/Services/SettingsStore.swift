@@ -21,7 +21,7 @@ class SettingsStore: ObservableObject {
 
     init() {
         // Default to Mac mini's local IP — update in Settings if needed
-        self.gatewayURL = UserDefaults.standard.string(forKey: "gatewayURL") ?? "http://localhost:18789"
+        self.gatewayURL = UserDefaults.standard.string(forKey: "gatewayURL") ?? "http://192.168.7.126:18789"
         self.gatewayToken = UserDefaults.standard.string(forKey: "gatewayToken") ?? ""
         self.selectedAgentId = UserDefaults.standard.string(forKey: "selectedAgentId") ?? "main"
         self.streamingEnabled = UserDefaults.standard.bool(forKey: "streamingEnabled") != false
