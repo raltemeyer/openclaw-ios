@@ -1,0 +1,352 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		043E01E2FA7EB9F55FF7E585 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FE26D0265421E65DDA45413 /* SettingsStore.swift */; };
+		0C0027975B71114221354DAB /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A6D6CC2334572D498B47E93 /* ChatView.swift */; };
+		30EF7CA31253DE8FE09E5AF8 /* OpenClawApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78711C6932EF377DF3BF71C5 /* OpenClawApp.swift */; };
+		3CE20DE963279F28063D13AB /* ConversationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 810F16F87C97F486E90206F1 /* ConversationStore.swift */; };
+		457855640028A218E3812F14 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1278D4BF3160ACEB46A3BEBB /* ContentView.swift */; };
+		6A8DBEC83EE849E7784F4D0E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 416DB77E0C680806FC11C0AC /* SettingsView.swift */; };
+		6FAF96117E6D1B192382C6A5 /* GatewayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26C3CA09763AD4CBE2C9EA8A /* GatewayService.swift */; };
+		87EBEFF81A4B93B9974B1A92 /* MessageBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47374A4375D9BF306CFA59E5 /* MessageBubble.swift */; };
+		95A758DA725117833045A2AA /* Agent.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5AE5E71BB38C532B75A322 /* Agent.swift */; };
+		C2F90B46895AFC294CED2B51 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = C017B7F0E630C8E842347398 /* Message.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		057D4C1FD8AF4BBF65B1EFE1 /* OpenClawApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = OpenClawApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A6D6CC2334572D498B47E93 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		1278D4BF3160ACEB46A3BEBB /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		26C3CA09763AD4CBE2C9EA8A /* GatewayService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GatewayService.swift; sourceTree = "<group>"; };
+		416DB77E0C680806FC11C0AC /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		47374A4375D9BF306CFA59E5 /* MessageBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageBubble.swift; sourceTree = "<group>"; };
+		78711C6932EF377DF3BF71C5 /* OpenClawApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenClawApp.swift; sourceTree = "<group>"; };
+		7FE26D0265421E65DDA45413 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
+		810F16F87C97F486E90206F1 /* ConversationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationStore.swift; sourceTree = "<group>"; };
+		C017B7F0E630C8E842347398 /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
+		FF5AE5E71BB38C532B75A322 /* Agent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agent.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		0F0030573A0EA3B50392D288 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				810F16F87C97F486E90206F1 /* ConversationStore.swift */,
+				26C3CA09763AD4CBE2C9EA8A /* GatewayService.swift */,
+				7FE26D0265421E65DDA45413 /* SettingsStore.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		765A62BAB730B69986E76589 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				FF5AE5E71BB38C532B75A322 /* Agent.swift */,
+				C017B7F0E630C8E842347398 /* Message.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		7C0D65602D0FFCB16B872B9E /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				1278D4BF3160ACEB46A3BEBB /* ContentView.swift */,
+				78711C6932EF377DF3BF71C5 /* OpenClawApp.swift */,
+				765A62BAB730B69986E76589 /* Models */,
+				0F0030573A0EA3B50392D288 /* Services */,
+				9C6479C54704E157B716E1B8 /* Views */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		9C6479C54704E157B716E1B8 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				0A6D6CC2334572D498B47E93 /* ChatView.swift */,
+				47374A4375D9BF306CFA59E5 /* MessageBubble.swift */,
+				416DB77E0C680806FC11C0AC /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		D04DFC158176373AA9E4C057 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				057D4C1FD8AF4BBF65B1EFE1 /* OpenClawApp.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D07C729B0E9266A7CF5363FF = {
+			isa = PBXGroup;
+			children = (
+				7C0D65602D0FFCB16B872B9E /* Sources */,
+				D04DFC158176373AA9E4C057 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F7D792B9E25BA9A709EC9BE1 /* OpenClawApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3473F0D437E9AD380B4AB208 /* Build configuration list for PBXNativeTarget "OpenClawApp" */;
+			buildPhases = (
+				DB72C28D6882446E7BF43B6B /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = OpenClawApp;
+			packageProductDependencies = (
+			);
+			productName = OpenClawApp;
+			productReference = 057D4C1FD8AF4BBF65B1EFE1 /* OpenClawApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B9F195C8FB0083F3C7807412 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+			};
+			buildConfigurationList = 4E02BAB13E0E990C03B49090 /* Build configuration list for PBXProject "OpenClawApp" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = D07C729B0E9266A7CF5363FF;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F7D792B9E25BA9A709EC9BE1 /* OpenClawApp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		DB72C28D6882446E7BF43B6B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				95A758DA725117833045A2AA /* Agent.swift in Sources */,
+				0C0027975B71114221354DAB /* ChatView.swift in Sources */,
+				457855640028A218E3812F14 /* ContentView.swift in Sources */,
+				3CE20DE963279F28063D13AB /* ConversationStore.swift in Sources */,
+				6FAF96117E6D1B192382C6A5 /* GatewayService.swift in Sources */,
+				C2F90B46895AFC294CED2B51 /* Message.swift in Sources */,
+				87EBEFF81A4B93B9974B1A92 /* MessageBubble.swift in Sources */,
+				30EF7CA31253DE8FE09E5AF8 /* OpenClawApp.swift in Sources */,
+				043E01E2FA7EB9F55FF7E585 /* SettingsStore.swift in Sources */,
+				6A8DBEC83EE849E7784F4D0E /* SettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		B11EA70266478F03F52F9DCD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Connects to your OpenClaw gateway on your local network";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.raltemeyer.OpenClawApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		C152DA750813A14E54448333 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_NAME = OpenClaw;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C457307B5465E49D78C74146 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_NAME = OpenClaw;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		C9FFAF005AD8C738F76A72EB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Connects to your OpenClaw gateway on your local network";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.raltemeyer.OpenClawApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3473F0D437E9AD380B4AB208 /* Build configuration list for PBXNativeTarget "OpenClawApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C152DA750813A14E54448333 /* Debug */,
+				C457307B5465E49D78C74146 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		4E02BAB13E0E990C03B49090 /* Build configuration list for PBXProject "OpenClawApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B11EA70266478F03F52F9DCD /* Debug */,
+				C9FFAF005AD8C738F76A72EB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = B9F195C8FB0083F3C7807412 /* Project object */;
+}
