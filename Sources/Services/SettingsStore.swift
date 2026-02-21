@@ -7,7 +7,13 @@ class SettingsStore: ObservableObject {
         didSet { UserDefaults.standard.set(gatewayURL, forKey: "gatewayURL") }
     }
     @Published var gatewayToken: String {
-        didSet { UserDefaults.standard.set(gatewayToken, forKey: "gatewayToken") }
+        didSet {
+            KeychainService.saveToken(gatewayToken)
+            if !gatewayToken.isEmpty {
+                // scrub legacy storage once migrated
+                UserDefaults.standard.removeObject(forKey: "gatewayToken")
+            }
+        }
     }
     @Published var selectedAgentId: String {
         didSet { UserDefaults.standard.set(selectedAgentId, forKey: "selectedAgentId") }
@@ -21,7 +27,16 @@ class SettingsStore: ObservableObject {
 
     init() {
         self.gatewayURL = UserDefaults.standard.string(forKey: "gatewayURL") ?? "http://100.64.0.1:18789"
-        self.gatewayToken = UserDefaults.standard.string(forKey: "gatewayToken") ?? ""
+
+        let keychainToken = KeychainService.loadToken()
+        let legacyToken = UserDefaults.standard.string(forKey: "gatewayToken")
+        let resolvedToken = (keychainToken?.isEmpty == false) ? keychainToken! : (legacyToken ?? "")
+        self.gatewayToken = resolvedToken
+        if keychainToken == nil, let legacyToken, !legacyToken.isEmpty {
+            KeychainService.saveToken(legacyToken)
+            UserDefaults.standard.removeObject(forKey: "gatewayToken")
+        }
+
         self.selectedAgentId = UserDefaults.standard.string(forKey: "selectedAgentId") ?? "main"
         self.streamingEnabled = UserDefaults.standard.object(forKey: "streamingEnabled") as? Bool ?? true
         self.gatewayProfile = UserDefaults.standard.string(forKey: "gatewayProfile") ?? "tailscale"
