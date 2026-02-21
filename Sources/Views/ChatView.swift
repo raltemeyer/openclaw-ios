@@ -10,12 +10,17 @@ struct ChatView: View {
     @State private var inputText = ""
     @State private var isStreaming = false
     @State private var errorMessage: String?
+    @State private var infoMessage: String?
     @FocusState private var inputFocused: Bool
 
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var pendingAttachments: [GatewayAttachment] = []
     @State private var showFilePicker = false
     @State private var lastPayload: (text: String, history: [Message], attachments: [GatewayAttachment])?
+
+    private let maxAttachmentCount = 5
+    private let maxSingleAttachmentBytes = 10 * 1024 * 1024
+    private let maxTotalAttachmentBytes = 20 * 1024 * 1024
 
     var conversation: Conversation {
         convoStore.conversation(for: agent.id)
@@ -47,6 +52,22 @@ struct ChatView: View {
                     .onChange(of: conversation.messages.last?.content) { _, _ in scrollToBottom(proxy: proxy) }
                 }
 
+                if let info = streamStatusMessage {
+                    Label(info, systemImage: "wifi")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal)
+                        .padding(.top, 4)
+                }
+
+                if let infoMessage {
+                    Label(infoMessage, systemImage: "info.circle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal)
+                        .padding(.top, 2)
+                }
+
                 if let error = errorMessage {
                     HStack {
                         Text(error).font(.caption).foregroundStyle(.red)
@@ -68,7 +89,7 @@ struct ChatView: View {
             }
             .fileImporter(
                 isPresented: $showFilePicker,
-                allowedContentTypes: [.text, .json, .pdf, .commaSeparatedText],
+                allowedContentTypes: [.plainText, .utf8PlainText, .text, .sourceCode, .json, .xml, .commaSeparatedText, .pdf],
                 allowsMultipleSelection: true
             ) { result in
                 switch result {
@@ -82,6 +103,16 @@ struct ChatView: View {
                 guard let newValue else { return }
                 Task { await loadPhoto(newValue) }
             }
+        }
+    }
+
+    private var streamStatusMessage: String? {
+        switch gateway.streamState {
+        case .idle: return nil
+        case .connecting(let attempt): return "Connecting stream (attempt \(attempt))"
+        case .reconnecting(let delaySeconds, let attempt): return "Reconnecting in \(delaySeconds)s (attempt \(attempt))"
+        case .streaming: return "Streaming response"
+        case .failed(let msg): return "Stream failed: \(msg)"
         }
     }
 
@@ -166,7 +197,7 @@ struct ChatView: View {
                 ForEach(pendingAttachments) { attachment in
                     HStack(spacing: 4) {
                         Image(systemName: attachment.kind == .image ? "photo" : "doc")
-                        Text(attachment.name).lineLimit(1)
+                        Text("\(attachment.name) • \(attachment.sizeLabel)").lineLimit(1)
                         Button {
                             pendingAttachments.removeAll { $0.id == attachment.id }
                         } label: {
@@ -195,6 +226,7 @@ struct ChatView: View {
         let outgoingText = text.isEmpty ? "[Sent attachments]" : text
         inputText = ""
         errorMessage = nil
+        infoMessage = nil
         isStreaming = true
         inputFocused = false
 
@@ -255,7 +287,7 @@ struct ChatView: View {
         do {
             if let data = try await item.loadTransferable(type: Data.self) {
                 let name = item.itemIdentifier ?? "photo.jpg"
-                pendingAttachments.append(GatewayAttachment(kind: .image, name: name, mimeType: "image/jpeg", data: data))
+                addAttachment(GatewayAttachment(kind: .image, name: name, mimeType: "image/jpeg", data: data))
             }
         } catch {
             errorMessage = "Photo attach failed: \(error.localizedDescription)"
@@ -268,12 +300,40 @@ struct ChatView: View {
                 _ = url.startAccessingSecurityScopedResource()
                 defer { url.stopAccessingSecurityScopedResource() }
                 let data = try Data(contentsOf: url)
-                let mime = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType ?? "application/octet-stream"
-                pendingAttachments.append(GatewayAttachment(kind: .file, name: url.lastPathComponent, mimeType: mime, data: data))
+                let ext = url.pathExtension
+                let mime = UTType(filenameExtension: ext)?.preferredMIMEType ?? "application/octet-stream"
+                let type = UTType(filenameExtension: ext)
+
+                let isAllowed = type?.conforms(to: .text) == true || [.json, .xml, .commaSeparatedText, .pdf].contains(where: { type?.conforms(to: $0) == true })
+                guard isAllowed else {
+                    errorMessage = "Unsupported file type: \(url.lastPathComponent). Use text, json, csv, xml, or pdf."
+                    continue
+                }
+
+                addAttachment(GatewayAttachment(kind: .file, name: url.lastPathComponent, mimeType: mime, data: data))
             } catch {
                 errorMessage = "Failed to read \(url.lastPathComponent): \(error.localizedDescription)"
             }
         }
+    }
+
+    private func addAttachment(_ attachment: GatewayAttachment) {
+        guard pendingAttachments.count < maxAttachmentCount else {
+            errorMessage = "Attachment limit reached (\(maxAttachmentCount))."
+            return
+        }
+        guard attachment.data.count <= maxSingleAttachmentBytes else {
+            errorMessage = "\(attachment.name) is too large. Limit is 10 MB per file."
+            return
+        }
+        let total = pendingAttachments.reduce(0) { $0 + $1.data.count } + attachment.data.count
+        guard total <= maxTotalAttachmentBytes else {
+            errorMessage = "Total attachment size exceeds 20 MB."
+            return
+        }
+
+        pendingAttachments.append(attachment)
+        infoMessage = "\(pendingAttachments.count) attachment(s) ready"
     }
 
     private func attachmentSummary(_ attachments: [GatewayAttachment]) -> String {

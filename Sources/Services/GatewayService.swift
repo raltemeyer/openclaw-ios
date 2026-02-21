@@ -36,7 +36,8 @@ struct SystemSnapshot {
 
 enum StreamState: Equatable {
     case idle
-    case connecting
+    case connecting(attempt: Int)
+    case reconnecting(delaySeconds: Int, attempt: Int)
     case streaming
     case failed(String)
 }
@@ -51,6 +52,9 @@ class GatewayService: ObservableObject {
     private var baseURL: String = ""
     private var token: String = ""
     private var activeTask: URLSessionDataTask?
+    private var activeDelegate: SSEDelegate?
+
+    private let chatPaths = ["/v1/chat/completions", "/chat/completions"]
 
     func configure(with settings: SettingsStore) {
         self.baseURL = settings.gatewayURL.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -80,23 +84,27 @@ class GatewayService: ObservableObject {
         let endpoints = [
             "/status",
             "/health",
-            "/v1/models",
-            "/v1/chat/completions"
+            "/v1/models"
         ]
 
         var lastError: Error?
         for endpoint in endpoints {
             do {
-                if endpoint == "/v1/chat/completions" {
-                    let payload: [String: Any] = [
-                        "model": "openclaw:main",
-                        "messages": [["role": "user", "content": "ping"]],
-                        "max_tokens": 1,
-                        "stream": false
-                    ]
-                    return try await request(path: endpoint, method: "POST", json: payload)
-                }
                 return try await request(path: endpoint, method: "GET")
+            } catch {
+                lastError = error
+            }
+        }
+
+        for path in chatPaths {
+            do {
+                let payload: [String: Any] = [
+                    "model": "openclaw:main",
+                    "messages": [["role": "user", "content": "ping"]],
+                    "max_tokens": 1,
+                    "stream": false
+                ]
+                return try await request(path: path, method: "POST", json: payload)
             } catch {
                 lastError = error
             }
@@ -117,19 +125,59 @@ class GatewayService: ObservableObject {
     ) {
         Task {
             do {
-                let req = try buildChatRequest(
+                try await sendWithReconnect(
                     text: text,
                     agentId: agentId,
                     history: history,
                     attachments: attachments,
-                    stream: true
+                    onChunk: onChunk,
+                    onComplete: onComplete,
+                    onError: onError
                 )
-                streamState = .connecting
-                startSSE(request: req, onChunk: onChunk, onComplete: onComplete, onError: onError)
             } catch {
                 streamState = .failed(error.localizedDescription)
                 onError(error.localizedDescription)
             }
+        }
+    }
+
+    private func sendWithReconnect(
+        text: String,
+        agentId: String,
+        history: [Message],
+        attachments: [GatewayAttachment],
+        onChunk: @escaping (String) -> Void,
+        onComplete: @escaping () -> Void,
+        onError: @escaping (String) -> Void
+    ) async throws {
+        let maxAttempts = 3
+        var lastError: String = ""
+
+        for attempt in 1...maxAttempts {
+            do {
+                let req = try buildChatRequest(text: text, agentId: agentId, history: history, attachments: attachments, stream: true)
+                streamState = .connecting(attempt: attempt)
+                try await startSSEWithResult(request: req, onChunk: onChunk)
+                streamState = .idle
+                onComplete()
+                return
+            } catch {
+                lastError = error.localizedDescription
+                if attempt < maxAttempts {
+                    let delay = min(2 * attempt, 5)
+                    streamState = .reconnecting(delaySeconds: delay, attempt: attempt + 1)
+                    try await Task.sleep(nanoseconds: UInt64(delay) * 1_000_000_000)
+                }
+            }
+        }
+
+        do {
+            let fallback = try await retryLastAsNonStream(text: text, agentId: agentId, history: history, attachments: attachments)
+            onChunk(fallback)
+            streamState = .idle
+            onComplete()
+        } catch {
+            onError("Stream failed after retries. \(lastError)")
         }
     }
 
@@ -139,17 +187,28 @@ class GatewayService: ObservableObject {
         history: [Message],
         attachments: [GatewayAttachment]
     ) async throws -> String {
-        let req = try buildChatRequest(text: text, agentId: agentId, history: history, attachments: attachments, stream: false)
-        let data = try await URLSession.shared.data(for: req).0
-        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        let choices = json?["choices"] as? [[String: Any]]
-        let message = choices?.first?["message"] as? [String: Any]
-        return message?["content"] as? String ?? "(No content)"
+        var lastError: Error?
+        for path in chatPaths {
+            do {
+                let req = try buildChatRequest(text: text, agentId: agentId, history: history, attachments: attachments, stream: false, path: path)
+                let data = try await URLSession.shared.data(for: req).0
+                let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                let choices = json?["choices"] as? [[String: Any]]
+                let message = choices?.first?["message"] as? [String: Any]
+                if let content = message?["content"] as? String, !content.isEmpty {
+                    return content
+                }
+            } catch {
+                lastError = error
+            }
+        }
+        throw lastError ?? NSError(domain: "Gateway", code: -4, userInfo: [NSLocalizedDescriptionKey: "No compatible chat endpoint"])
     }
 
     func cancelStreaming() {
         activeTask?.cancel()
         activeTask = nil
+        activeDelegate = nil
         streamState = .idle
     }
 
@@ -206,9 +265,10 @@ class GatewayService: ObservableObject {
         agentId: String,
         history: [Message],
         attachments: [GatewayAttachment],
-        stream: Bool
+        stream: Bool,
+        path: String = "/v1/chat/completions"
     ) throws -> URLRequest {
-        guard let url = URL(string: "\(baseURL)/v1/chat/completions") else {
+        guard let url = URL(string: "\(baseURL)\(path)") else {
             throw NSError(domain: "Gateway", code: -2, userInfo: [NSLocalizedDescriptionKey: "Invalid gateway URL"])
         }
 
@@ -244,12 +304,16 @@ class GatewayService: ObservableObject {
                 let b64 = attachment.data.base64EncodedString()
                 let dataURL = "data:\(attachment.mimeType);base64,\(b64)"
                 parts.append(["type": "image_url", "image_url": ["url": dataURL]])
-                parts.append(["type": "text", "text": "[Attached image: \(attachment.name)]"])
+                parts.append(["type": "text", "text": "[Attached image: \(attachment.name), \(attachment.sizeLabel)]"])
             case .file:
-                if let fileText = String(data: attachment.data.prefix(12_000), encoding: .utf8), !fileText.isEmpty {
-                    parts.append(["type": "text", "text": "[Attached file \(attachment.name)]\n\n\(fileText)"])
+                if attachment.mimeType.contains("text") || attachment.mimeType.contains("json") || attachment.mimeType.contains("xml") {
+                    if let fileText = String(data: attachment.data.prefix(12_000), encoding: .utf8), !fileText.isEmpty {
+                        parts.append(["type": "text", "text": "[Attached file \(attachment.name)]\n\n\(fileText)"])
+                    } else {
+                        parts.append(["type": "text", "text": "[Attached file \(attachment.name), \(attachment.sizeLabel) — unreadable text]"])
+                    }
                 } else {
-                    parts.append(["type": "text", "text": "[Attached file \(attachment.name), \(attachment.sizeLabel) — binary preview unavailable]"])
+                    parts.append(["type": "text", "text": "[Attached file \(attachment.name), \(attachment.sizeLabel), type: \(attachment.mimeType)]"])
                 }
             }
         }
@@ -257,24 +321,33 @@ class GatewayService: ObservableObject {
         return parts
     }
 
-    private func startSSE(
+    private func startSSEWithResult(
         request: URLRequest,
-        onChunk: @escaping (String) -> Void,
-        onComplete: @escaping () -> Void,
-        onError: @escaping (String) -> Void
-    ) {
-        let delegate = SSEDelegate(
-            onState: { state in
-                Task { @MainActor in self.streamState = state }
-            },
-            onChunk: onChunk,
-            onComplete: onComplete,
-            onError: onError
-        )
-        let streamSession = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
-        let task = streamSession.dataTask(with: request)
-        activeTask = task
-        task.resume()
+        onChunk: @escaping (String) -> Void
+    ) async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            let delegate = SSEDelegate(
+                onState: { state in
+                    Task { @MainActor in self.streamState = state }
+                },
+                onChunk: onChunk,
+                onComplete: {
+                    self.activeTask = nil
+                    self.activeDelegate = nil
+                    continuation.resume()
+                },
+                onError: { error in
+                    self.activeTask = nil
+                    self.activeDelegate = nil
+                    continuation.resume(throwing: NSError(domain: "SSE", code: -1, userInfo: [NSLocalizedDescriptionKey: error]))
+                }
+            )
+            self.activeDelegate = delegate
+            let streamSession = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+            let task = streamSession.dataTask(with: request)
+            activeTask = task
+            task.resume()
+        }
     }
 
     private func request(path: String, method: String, json: [String: Any]? = nil) async throws -> Data {

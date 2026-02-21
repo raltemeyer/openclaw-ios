@@ -82,7 +82,8 @@ struct SettingsView: View {
 
                     switch gateway.streamState {
                     case .idle: Text("Stream state: idle").foregroundStyle(.secondary)
-                    case .connecting: Text("Stream state: connecting").foregroundStyle(.secondary)
+                    case .connecting(let attempt): Text("Stream state: connecting (attempt \(attempt))").foregroundStyle(.secondary)
+                    case .reconnecting(let delay, let attempt): Text("Stream state: reconnecting in \(delay)s (attempt \(attempt))").foregroundStyle(.secondary)
                     case .streaming: Text("Stream state: active").foregroundStyle(.secondary)
                     case .failed(let err): Text("Stream error: \(err)").foregroundStyle(.red)
                     }

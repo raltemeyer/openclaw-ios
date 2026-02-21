@@ -1,10 +1,12 @@
 import SwiftUI
+import UIKit
 
 struct ContentView: View {
     @EnvironmentObject var settings: SettingsStore
     @EnvironmentObject var gateway: GatewayService
     @StateObject private var convoStore = ConversationStore()
     @State private var showSettings = false
+    @State private var tabSelection = "main"
 
     var body: some View {
         if settings.isConfigured {
@@ -16,7 +18,7 @@ struct ContentView: View {
     }
 
     private var mainTabView: some View {
-        TabView(selection: selectedAgentBinding) {
+        TabView(selection: $tabSelection) {
             ForEach(Agent.all) { agent in
                 ChatView(agent: agent)
                     .environmentObject(convoStore)
@@ -33,25 +35,39 @@ struct ContentView: View {
                 .tag("settings")
         }
         .tint(settings.selectedAgent.swiftUIColor)
-    }
-
-    private var selectedAgentBinding: Binding<String> {
-        Binding(get: { settings.selectedAgentId }, set: { settings.selectedAgentId = $0 })
+        .onAppear {
+            tabSelection = settings.selectedAgentId
+        }
+        .onChange(of: tabSelection) { _, newValue in
+            if Agent.all.contains(where: { $0.id == newValue }) {
+                settings.selectedAgentId = newValue
+            }
+        }
     }
 }
 
 struct SystemView: View {
     @EnvironmentObject var gateway: GatewayService
+    @State private var selectedSession: GatewaySessionSummary?
+    @State private var exportStatus: String?
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    Text("Last refresh: \(gateway.latestSystemSnapshot.fetchedAt.formatted(date: .omitted, time: .standard))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Button("Refresh") {
-                        Task { await gateway.refreshSystemSnapshot() }
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Last refresh")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(gateway.latestSystemSnapshot.fetchedAt.formatted(date: .omitted, time: .standard))
+                                .font(.body.weight(.medium))
+                        }
+                        Spacer()
+                        Button("Refresh") {
+                            Task { await gateway.refreshSystemSnapshot() }
+                        }
+                        .buttonStyle(.borderedProminent)
                     }
                 }
 
@@ -61,18 +77,34 @@ struct SystemView: View {
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(gateway.latestSystemSnapshot.sessions) { session in
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    Text(session.title).font(.headline)
-                                    Spacer()
-                                    Text(session.status).font(.caption).foregroundStyle(.secondary)
+                            Button {
+                                selectedSession = session
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack {
+                                        Text(session.title).font(.headline)
+                                        Spacer()
+                                        Text(session.status).font(.caption).foregroundStyle(.secondary)
+                                    }
+                                    Text(session.detail).font(.subheadline)
+                                    if let model = session.model {
+                                        Text("Model: \(model)").font(.caption).foregroundStyle(.secondary)
+                                    }
                                 }
-                                Text(session.detail).font(.subheadline)
-                                if let model = session.model {
-                                    Text("Model: \(model)").font(.caption).foregroundStyle(.secondary)
-                                }
+                                .padding(.vertical, 4)
                             }
-                            .padding(.vertical, 4)
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
+                if let selectedSession {
+                    Section("Quick Controls: \(selectedSession.title)") {
+                        Button("Reset Session") {
+                            Task { exportStatus = await gateway.resetSession(agentId: selectedSession.agentId) }
+                        }
+                        Button("Stop Run") {
+                            Task { exportStatus = await gateway.stopRun(agentId: selectedSession.agentId) }
                         }
                     }
                 }
@@ -80,6 +112,25 @@ struct SystemView: View {
                 Section("Diagnostics notes") {
                     ForEach(gateway.latestSystemSnapshot.notes, id: \.self) { note in
                         Text("• \(note)").font(.caption)
+                    }
+                }
+
+                Section("Remote Ops") {
+                    Button("Copy diagnostics report") {
+                        let report = diagnosticsReport()
+                        UIPasteboard.general.string = report
+                        exportStatus = "Diagnostics report copied"
+                    }
+                    .buttonStyle(.bordered)
+
+                    Text("Use this report when escalating gateway issues from mobile.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if let exportStatus {
+                        Text(exportStatus)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -90,6 +141,22 @@ struct SystemView: View {
                 }
             }
         }
+    }
+
+    private func diagnosticsReport() -> String {
+        let sessions = gateway.latestSystemSnapshot.sessions.map { "- \($0.title) [\($0.status)] model=\($0.model ?? "unknown")" }.joined(separator: "\n")
+        let notes = gateway.latestSystemSnapshot.notes.map { "- \($0)" }.joined(separator: "\n")
+
+        return """
+        OpenClaw iOS Diagnostics
+        Timestamp: \(Date().formatted(date: .abbreviated, time: .standard))
+
+        Sessions:
+        \(sessions.isEmpty ? "- none" : sessions)
+
+        Notes:
+        \(notes.isEmpty ? "- none" : notes)
+        """
     }
 }
 
