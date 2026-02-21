@@ -2,14 +2,15 @@
 
 Native SwiftUI app for OpenClaw remote management.
 
-## Overnight V1 Highlights
+## V1.1 Hardening Highlights
 
 - Multi-agent chat (Hopper, Henry, Mr. DAG, Scout)
-- System tab: best-effort active sessions/agent visibility
-- Agent controls: reset session, stop run, model change attempts with graceful fallback
-- Attachments in chat: photo picker + file picker (with gateway-capability-aware behavior)
-- Streaming reliability: explicit stream state, cancel, retry (non-stream fallback), surfaced errors
-- Settings/control panel: gateway profiles, tailscale-first guidance, diagnostics
+- **Token security hardening:** gateway token moved to Keychain with automatic UserDefaults migration
+- **Streaming resiliency:** reconnect/backoff attempts + non-stream fallback + clearer status states
+- **Attachments hardened:** explicit type allowlist, per-file + total size limits, clear UX feedback
+- **Endpoint compatibility:** chat fallback chain (`/v1/chat/completions` then `/chat/completions`) and defensive probing
+- System tab polish with per-session quick actions (reset/stop)
+- **New remote-ops feature:** one-tap diagnostics report copy for incident escalation
 - Recovery helpers: safe SSH command templates (no embedded shell)
 
 ## Requirements
@@ -30,6 +31,7 @@ Native SwiftUI app for OpenClaw remote management.
 
 ### Chat
 - `POST /v1/chat/completions`
+- Fallback: `POST /chat/completions`
 
 ### System probe (best effort)
 - `GET /sessions`, `GET /v1/sessions`, `GET /agents`, `GET /v1/agents`
@@ -40,4 +42,4 @@ Native SwiftUI app for OpenClaw remote management.
 - Stop run: `POST /sessions/stop` → `/v1/sessions/stop` → `/agents/stop`
 - Set model: `POST /agents/model` → `/v1/agents/model` → `/sessions/model`
 
-See `RUNBOOK.md` for detailed operational notes, validation steps, and deferred work.
+See `RUNBOOK.md` for validation and known limitations.

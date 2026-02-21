@@ -1,14 +1,21 @@
-# OpenClaw iOS V1 RUNBOOK
+# OpenClaw iOS V1.1 RUNBOOK
 
-## Scope shipped overnight
+## Scope shipped
 - System tab for active sessions/agents (best-effort multi-endpoint probing)
 - Per-agent controls in chat: reset session, stop run, set model
-- Attachments in chat (Photos + files)
-- Streaming reliability improvements (state tracking, stop, non-stream retry, surfaced errors)
+- Attachments in chat (Photos + files) with limits + allowlist UX
+- Streaming reliability upgrades (reconnect/backoff, stop, non-stream retry fallback, surfaced errors)
 - Settings control panel improvements (gateway profiles, diagnostics, tailscale-first guidance)
 - Recovery helpers using SSH command templates (copy/paste, no embedded shell)
+- Remote ops extra: copyable diagnostics report from System tab
+- Gateway token moved from UserDefaults to Keychain with migration fallback
 
-## Gateway assumptions (v1)
+## Security posture (kept)
+- No internet exposure changes
+- No embedded shell or arbitrary command execution in app
+- Tailscale-first wording retained; loopback/tailscale deployment assumed
+
+## Endpoint compatibility
 The app is defensive and tries multiple endpoints because gateway variants differ.
 
 ### Read endpoints probed
@@ -20,48 +27,51 @@ The app is defensive and tries multiple endpoints because gateway variants diffe
 - `GET /agents`
 - `GET /v1/agents`
 
-### Chat endpoint
-- `POST /v1/chat/completions`
+### Chat endpoint chain
+- Primary: `POST /v1/chat/completions`
+- Fallback: `POST /chat/completions`
 
-### Control endpoints attempted (fallback list)
+### Control endpoint fallback chains
 - Reset session: `POST /sessions/reset` → `/v1/sessions/reset` → `/agents/reset`
 - Stop run: `POST /sessions/stop` → `/v1/sessions/stop` → `/agents/stop`
 - Set model: `POST /agents/model` → `/v1/agents/model` → `/sessions/model`
 
-If all fail, UI presents: use Recovery SSH template path.
+If all fail, UI presents fallback guidance to recovery SSH templates.
 
-## Attachment behavior
-- Images: encoded as OpenAI-style content part (`image_url` data URL)
+## Attachment behavior and limits
+- Max attachments/message: 5
+- Max per attachment: 10 MB
+- Max total attachment payload: 20 MB
+- Allowed file types: text/json/csv/xml/pdf (+ images from photo picker)
+- Images: encoded as OpenAI-style `image_url` data URL
 - Text-like files: first ~12KB injected as text content part
-- Binary files: included as metadata note only
+- Binary/non-text files: metadata note only (no binary upload path in this version)
 
-### Known endpoint constraint
-Some gateways reject rich `content` arrays or image/file input. In that case user sees a visible error and can retry non-stream mode.
+## Streaming behavior
+- Automatic reconnect attempts: up to 3
+- Backoff: 2s, 4s (capped)
+- If stream still fails, app attempts non-stream completion once
+- Stream states shown in UI (connecting/reconnecting/active/failed)
 
-## Diagnostics & recovery
-- Gateway profiles: `custom`, `lan`, `tailscale`
-- Recovery section provides SSH commands only (no remote shell in app):
-  - `openclaw gateway status`
-  - `openclaw gateway restart`
-  - tail gateway log
+## Build + Test status on this host
+Attempted full simulator build using `xcodebuild`, but host is currently pointed at Command Line Tools only:
+- error: `xcodebuild requires Xcode, but active developer directory '/Library/Developer/CommandLineTools' is a command line tools instance`
 
-## Security constraints upheld
-- No internet exposure changes
-- No embedded shell or arbitrary command execution in app
-- Tailscale-first wording kept; loopback/tailscale posture retained
+### To run on ryans-mac-studio (full Xcode)
+1. Ensure full Xcode is installed
+2. Set developer directory (if needed):
+   - `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`
+3. Build:
+   - `xcodebuild -project OpenClawApp.xcodeproj -scheme OpenClawApp -destination 'platform=iOS Simulator,name=iPhone 16' build`
+4. Smoke test in simulator:
+   - Configure URL/token
+   - Chat each agent
+   - Attach one image + one text/pdf file
+   - Cancel stream and verify retry/fallback flow
+   - Open System tab and copy diagnostics report
 
-## Validation checklist for Ryan (morning)
-1. Open app Settings, select Tailscale profile, set real URL/token
-2. Tap **Test Connection**
-3. Send message in each agent tab
-4. Attach one photo + one text file and send
-5. Induce stream cancel and retry
-6. Open System tab and confirm endpoint probe notes/sessions
-7. Try reset/stop/model actions and confirm either success or graceful fallback message
-
-## Deferred items (explicit)
-- True binary file upload endpoint (multipart) once gateway contract stabilizes
-- Strongly typed server schema for sessions/agents/actions
-- Keychain storage for token (currently UserDefaults MVP)
-- Per-agent persisted model override state
-- Deeper stream reconnection/backoff policy + resumable run IDs
+## Known limitations / deferred
+- No multipart binary upload endpoint yet (pending stabilized gateway contract)
+- Session/agent/action payloads still best-effort decoded (not fully typed API schema)
+- No per-agent persisted model preference yet
+- No run-resume by run-id (retries are request-level)
