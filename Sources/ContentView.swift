@@ -11,9 +11,7 @@ struct ContentView: View {
             mainTabView
         } else {
             SetupView(showSettings: $showSettings)
-                .sheet(isPresented: $showSettings) {
-                    SettingsView()
-                }
+                .sheet(isPresented: $showSettings) { SettingsView() }
         }
     }
 
@@ -22,30 +20,78 @@ struct ContentView: View {
             ForEach(Agent.all) { agent in
                 ChatView(agent: agent)
                     .environmentObject(convoStore)
-                    .tabItem {
-                        Label(agent.name, systemImage: agent.icon)
-                    }
+                    .tabItem { Label(agent.name, systemImage: agent.icon) }
                     .tag(agent.id)
             }
 
+            SystemView()
+                .tabItem { Label("System", systemImage: "server.rack") }
+                .tag("system")
+
             SettingsView()
-                .tabItem {
-                    Label("Settings", systemImage: "gear")
-                }
+                .tabItem { Label("Settings", systemImage: "gear") }
                 .tag("settings")
         }
         .tint(settings.selectedAgent.swiftUIColor)
     }
 
     private var selectedAgentBinding: Binding<String> {
-        Binding(
-            get: { settings.selectedAgentId },
-            set: { settings.selectedAgentId = $0 }
-        )
+        Binding(get: { settings.selectedAgentId }, set: { settings.selectedAgentId = $0 })
     }
 }
 
-// MARK: - Setup View (first launch)
+struct SystemView: View {
+    @EnvironmentObject var gateway: GatewayService
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Text("Last refresh: \(gateway.latestSystemSnapshot.fetchedAt.formatted(date: .omitted, time: .standard))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Button("Refresh") {
+                        Task { await gateway.refreshSystemSnapshot() }
+                    }
+                }
+
+                Section("Active Sessions / Agents") {
+                    if gateway.latestSystemSnapshot.sessions.isEmpty {
+                        Text("No sessions found via known endpoints.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(gateway.latestSystemSnapshot.sessions) { session in
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text(session.title).font(.headline)
+                                    Spacer()
+                                    Text(session.status).font(.caption).foregroundStyle(.secondary)
+                                }
+                                Text(session.detail).font(.subheadline)
+                                if let model = session.model {
+                                    Text("Model: \(model)").font(.caption).foregroundStyle(.secondary)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                }
+
+                Section("Diagnostics notes") {
+                    ForEach(gateway.latestSystemSnapshot.notes, id: \.self) { note in
+                        Text("• \(note)").font(.caption)
+                    }
+                }
+            }
+            .navigationTitle("System")
+            .task {
+                if gateway.latestSystemSnapshot.sessions.isEmpty {
+                    await gateway.refreshSystemSnapshot()
+                }
+            }
+        }
+    }
+}
 
 struct SetupView: View {
     @EnvironmentObject var settings: SettingsStore
