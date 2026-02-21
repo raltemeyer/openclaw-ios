@@ -6,6 +6,7 @@ struct SettingsView: View {
     @State private var testingConnection = false
     @State private var connectionResult: ConnectionResult?
     @State private var showToken = false
+    @State private var newProfileName = ""
 
     enum ConnectionResult {
         case success, failure(String)
@@ -14,6 +15,27 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("OpenClaw Instance") {
+                    Picker("Active Profile", selection: $settings.activeProfileId) {
+                        ForEach(settings.profiles) { profile in
+                            Text(profile.name).tag(profile.id)
+                        }
+                    }
+
+                    HStack {
+                        TextField("New profile name", text: $newProfileName)
+                        Button("Add") {
+                            settings.addProfile(named: newProfileName)
+                            newProfileName = ""
+                        }
+                        .disabled(newProfileName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+
+                    Text("Each profile stores its own gateway URL/token and agent tab preferences.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("Gateway Profile") {
                     Picker("Profile", selection: $settings.gatewayProfile) {
                         Text("Custom").tag("custom")
@@ -53,6 +75,46 @@ struct SettingsView: View {
                     }
                 } footer: {
                     Text("Tailscale-first: use your Mac mini Tailscale IP whenever possible. Keep gateway bound to loopback + tailscale only.")
+                }
+
+                Section("Agent Management") {
+                    ForEach(settings.agentTabOrder, id: \.self) { id in
+                        if let agent = Agent.all.first(where: { $0.id == id }) {
+                            Toggle(isOn: Binding(
+                                get: { settings.isAgentVisible(id) },
+                                set: { settings.setAgentVisibility(id, visible: $0) }
+                            )) {
+                                HStack {
+                                    Image(systemName: agent.icon)
+                                    Text(agent.name)
+                                }
+                            }
+                        }
+                    }
+
+                    if settings.visibleAgentsForReorder.count > 1 {
+                        Text("Reorder visible tabs")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        ForEach(settings.visibleAgentsForReorder) { agent in
+                            HStack {
+                                Image(systemName: "line.3.horizontal")
+                                    .foregroundStyle(.secondary)
+                                Image(systemName: agent.icon)
+                                Text(agent.name)
+                            }
+                        }
+                        .onMove { fromOffsets, toOffset in
+                            settings.moveVisibleAgents(fromOffsets: fromOffsets, toOffset: toOffset)
+                        }
+                    }
+
+                    if !settings.hiddenAgents.isEmpty {
+                        Text("Hidden agents can be re-enabled anytime using the toggles above.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Section("Connection + Diagnostics") {
@@ -118,6 +180,9 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .toolbar {
+                EditButton()
+            }
         }
     }
 

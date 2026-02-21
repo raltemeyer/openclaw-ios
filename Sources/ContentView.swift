@@ -19,7 +19,7 @@ struct ContentView: View {
 
     private var mainTabView: some View {
         TabView(selection: $tabSelection) {
-            ForEach(Agent.all) { agent in
+            ForEach(settings.orderedVisibleAgents) { agent in
                 ChatView(agent: agent)
                     .environmentObject(convoStore)
                     .tabItem { Label(agent.name, systemImage: agent.icon) }
@@ -36,12 +36,19 @@ struct ContentView: View {
         }
         .tint(settings.selectedAgent.swiftUIColor)
         .onAppear {
-            tabSelection = settings.selectedAgentId
+            if settings.orderedVisibleAgents.contains(where: { $0.id == settings.selectedAgentId }) {
+                tabSelection = settings.selectedAgentId
+            } else {
+                tabSelection = settings.orderedVisibleAgents.first?.id ?? Agent.default.id
+            }
         }
         .onChange(of: tabSelection) { _, newValue in
-            if Agent.all.contains(where: { $0.id == newValue }) {
+            if settings.orderedVisibleAgents.contains(where: { $0.id == newValue }) {
                 settings.selectedAgentId = newValue
             }
+        }
+        .onChange(of: settings.activeProfileId) { _, _ in
+            tabSelection = settings.selectedAgentId
         }
     }
 }

@@ -1,6 +1,10 @@
 # OpenClaw iOS V1.1 RUNBOOK
 
 ## Scope shipped
+- Agent management in Settings: show/hide agents in bottom tab bar
+- Per-profile settings model: each profile has gateway URL/token + visible agents + tab order
+- Tab order editing for visible agents (Edit mode drag/reorder)
+- Backward-compatible migration from legacy single-profile settings
 - System tab for active sessions/agents (best-effort multi-endpoint probing)
 - Per-agent controls in chat: reset session, stop run, set model
 - Attachments in chat (Photos + files) with limits + allowlist UX
@@ -52,6 +56,17 @@ If all fail, UI presents fallback guidance to recovery SSH templates.
 - Backoff: 2s, 4s (capped)
 - If stream still fails, app attempts non-stream completion once
 - Stream states shown in UI (connecting/reconnecting/active/failed)
+
+## Usage notes (Agent Management)
+1. Open **Settings → OpenClaw Instance** and choose/create a profile.
+2. In **Agent Management**, use toggles to control which agents appear in bottom tabs.
+3. Tap **Edit** (top-right), then drag visible agents to reorder tab order.
+4. Hidden agents remain listed and can be re-enabled at any time.
+
+Profile behavior:
+- URL/token are scoped per profile.
+- Agent visibility + order are scoped per profile.
+- Switching profiles swaps all of the above immediately.
 
 ## Build + Test status on this host
 Attempted full simulator build using `xcodebuild`, but host is currently pointed at Command Line Tools only:
