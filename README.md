@@ -1,74 +1,43 @@
 # OpenClaw iOS App
 
-Native SwiftUI app for your OpenClaw agent hub.
+Native SwiftUI app for OpenClaw remote management.
 
-## Features
+## Overnight V1 Highlights
 
-- **Multi-agent chat** — Hopper, Henry, Mr. DAG, Scout in separate tabs
-- **SSE streaming** — live token-by-token responses
-- **Local + remote** — LAN via Mac IP, or remote via Tailscale
-- **Persistent history** — conversations saved to device storage
-- **Connection status** — live indicator per chat
+- Multi-agent chat (Hopper, Henry, Mr. DAG, Scout)
+- System tab: best-effort active sessions/agent visibility
+- Agent controls: reset session, stop run, model change attempts with graceful fallback
+- Attachments in chat: photo picker + file picker (with gateway-capability-aware behavior)
+- Streaming reliability: explicit stream state, cancel, retry (non-stream fallback), surfaced errors
+- Settings/control panel: gateway profiles, tailscale-first guidance, diagnostics
+- Recovery helpers: safe SSH command templates (no embedded shell)
 
 ## Requirements
 
 - iOS 17+
 - Xcode 16+
-- OpenClaw gateway running (port 18789)
+- OpenClaw gateway running (default port 18789)
 
 ## Setup
 
 1. Open `OpenClawApp.xcodeproj` in Xcode
-2. Select a simulator or connected device
-3. Build & run (⌘R)
-4. In the Settings tab, enter:
-   - **Gateway URL**: `http://<your-mac-ip>:18789`
-   - **Auth Token**: from `~/.openclaw/openclaw.json` → `gateway.auth.token`
+2. Select simulator/device and build
+3. Configure in Settings:
+   - Gateway URL (`http://<tailscale-or-lan-ip>:18789`)
+   - Auth token from `~/.openclaw/openclaw.json` (`gateway.auth.token`)
 
-### Finding your Mac's IP
+## Core endpoint usage
 
-```bash
-ipconfig getifaddr en0
-```
+### Chat
+- `POST /v1/chat/completions`
 
-### Remote access (Tailscale)
+### System probe (best effort)
+- `GET /sessions`, `GET /v1/sessions`, `GET /agents`, `GET /v1/agents`
+- Connectivity probes: `GET /status`, `GET /health`, `GET /v1/models`
 
-The gateway's `allowTailscale: true` config means your Tailscale IP works automatically. Find it in the Tailscale app on your Mac.
+### Control actions (fallback chain)
+- Reset: `POST /sessions/reset` → `/v1/sessions/reset` → `/agents/reset`
+- Stop run: `POST /sessions/stop` → `/v1/sessions/stop` → `/agents/stop`
+- Set model: `POST /agents/model` → `/v1/agents/model` → `/sessions/model`
 
-## Architecture
-
-```
-Sources/
-├── OpenClawApp.swift          # @main entry point
-├── ContentView.swift          # Tab container + setup flow
-├── Models/
-│   ├── Agent.swift            # Agent definitions (Hopper, Henry, Mr. DAG, Scout)
-│   └── Message.swift          # Message + Conversation models
-├── Services/
-│   ├── GatewayService.swift   # SSE streaming via /v1/chat/completions
-│   ├── ConversationStore.swift # Local persistence
-│   └── SettingsStore.swift    # UserDefaults-backed settings
-└── Views/
-    ├── ChatView.swift          # Main chat interface
-    ├── MessageBubble.swift     # Message rendering
-    └── SettingsView.swift      # Gateway config + agent list
-```
-
-## Regenerating the Xcode project
-
-If you add/move Swift files, regenerate with:
-
-```bash
-brew install xcodegen  # one-time
-cd ~/Developer/OpenClawApp
-xcodegen generate
-```
-
-## Gateway API
-
-Uses the OpenAI-compatible endpoint (enabled in `openclaw.json`):
-```
-POST /v1/chat/completions
-Authorization: Bearer <token>
-x-openclaw-agent-id: main|henry|mrdag|scout
-```
+See `RUNBOOK.md` for detailed operational notes, validation steps, and deferred work.

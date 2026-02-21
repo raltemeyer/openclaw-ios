@@ -14,11 +14,19 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                // Gateway Section
-                Section {
+                Section("Gateway Profile") {
+                    Picker("Profile", selection: $settings.gatewayProfile) {
+                        Text("Custom").tag("custom")
+                        Text("Local LAN").tag("lan")
+                        Text("Tailscale (Recommended)").tag("tailscale")
+                    }
+                    .onChange(of: settings.gatewayProfile) { _, newValue in
+                        settings.applyProfile(newValue)
+                    }
+
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Gateway URL").font(.caption).foregroundStyle(.secondary)
-                        TextField("http://192.168.x.x:18789", text: $settings.gatewayURL)
+                        TextField("http://100.x.y.z:18789", text: $settings.gatewayURL)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
                             .keyboardType(.URL)
@@ -37,31 +45,22 @@ struct SettingsView: View {
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
 
-                            Button {
-                                showToken.toggle()
-                            } label: {
+                            Button { showToken.toggle() } label: {
                                 Image(systemName: showToken ? "eye.slash" : "eye")
                                     .foregroundStyle(.secondary)
                             }
                         }
                     }
-                } header: {
-                    Text("Gateway")
                 } footer: {
-                    Text("Your OpenClaw gateway URL and auth token. For local network access use your Mac's IP. For remote access, use your Tailscale IP.")
+                    Text("Tailscale-first: use your Mac mini Tailscale IP whenever possible. Keep gateway bound to loopback + tailscale only.")
                 }
 
-                // Connection Test
-                Section {
+                Section("Connection + Diagnostics") {
                     Button {
                         testConnection()
                     } label: {
                         HStack {
-                            if testingConnection {
-                                ProgressView().scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "network")
-                            }
+                            if testingConnection { ProgressView().scaleEffect(0.8) } else { Image(systemName: "network") }
                             Text(testingConnection ? "Testing…" : "Test Connection")
                         }
                     }
@@ -70,79 +69,51 @@ struct SettingsView: View {
                     if let result = connectionResult {
                         switch result {
                         case .success:
-                            Label("Connected successfully", systemImage: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
+                            Label("Connected successfully", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
                         case .failure(let msg):
-                            Label(msg, systemImage: "xmark.circle.fill")
-                                .foregroundStyle(.red)
+                            Label(msg, systemImage: "xmark.circle.fill").foregroundStyle(.red)
                         }
                     }
 
                     HStack {
-                        Circle()
-                            .fill(gateway.isConnected ? Color.green : Color.red)
-                            .frame(width: 8, height: 8)
-                        Text(gateway.isConnected ? "Gateway reachable" : "Gateway unreachable")
-                            .foregroundStyle(.secondary)
+                        Circle().fill(gateway.isConnected ? Color.green : Color.red).frame(width: 8, height: 8)
+                        Text(gateway.isConnected ? "Gateway reachable" : "Gateway unreachable").foregroundStyle(.secondary)
                     }
-                } header: {
-                    Text("Connection")
-                }
 
-                // Agents Section
-                Section("Agents") {
-                    ForEach(Agent.all) { agent in
-                        HStack {
-                            ZStack {
-                                Circle()
-                                    .fill(agent.swiftUIColor.gradient)
-                                    .frame(width: 32, height: 32)
-                                Image(systemName: agent.icon)
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(.white)
-                            }
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(agent.name).font(.subheadline.bold())
-                                Text(agent.description).font(.caption).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Text(agent.id)
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                                .padding(4)
-                                .background(Color(.tertiarySystemBackground))
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
-                        }
+                    switch gateway.streamState {
+                    case .idle: Text("Stream state: idle").foregroundStyle(.secondary)
+                    case .connecting: Text("Stream state: connecting").foregroundStyle(.secondary)
+                    case .streaming: Text("Stream state: active").foregroundStyle(.secondary)
+                    case .failed(let err): Text("Stream error: \(err)").foregroundStyle(.red)
                     }
                 }
 
-                // Options
+                Section("Recovery (safe helpers)") {
+                    Text("No embedded shell. Copy/paste SSH templates into Terminal.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    LabeledContent("Restart gateway") {
+                        Text("ssh ryan@ryans-mac-studio 'openclaw gateway restart'")
+                            .font(.caption.monospaced())
+                            .textSelection(.enabled)
+                    }
+
+                    LabeledContent("Status") {
+                        Text("ssh ryan@ryans-mac-studio 'openclaw gateway status'")
+                            .font(.caption.monospaced())
+                            .textSelection(.enabled)
+                    }
+
+                    LabeledContent("Tail logs") {
+                        Text("ssh ryan@ryans-mac-studio 'tail -n 200 ~/.openclaw/logs/gateway.log'")
+                            .font(.caption.monospaced())
+                            .textSelection(.enabled)
+                    }
+                }
+
                 Section("Options") {
                     Toggle("Streaming responses", isOn: $settings.streamingEnabled)
-                }
-
-                // Quick Setup
-                Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Mac mini (local)")
-                            .font(.caption.bold())
-                        Text("URL: http://<mac-ip>:18789")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .monospaced()
-                        Text("Token: found in openclaw.json → gateway.auth.token")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Divider()
-                        Text("Remote (Tailscale)")
-                            .font(.caption.bold())
-                        Text("URL: http://<tailscale-ip>:18789")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .monospaced()
-                    }
-                } header: {
-                    Text("Setup Guide")
                 }
             }
             .navigationTitle("Settings")
@@ -154,7 +125,7 @@ struct SettingsView: View {
         connectionResult = nil
         gateway.checkConnection()
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
             testingConnection = false
             connectionResult = gateway.isConnected ? .success : .failure("Cannot reach gateway at \(settings.gatewayURL)")
         }

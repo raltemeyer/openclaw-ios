@@ -7,10 +7,7 @@ class SettingsStore: ObservableObject {
         didSet { UserDefaults.standard.set(gatewayURL, forKey: "gatewayURL") }
     }
     @Published var gatewayToken: String {
-        didSet {
-            // Store token in Keychain in production; UserDefaults for MVP
-            UserDefaults.standard.set(gatewayToken, forKey: "gatewayToken")
-        }
+        didSet { UserDefaults.standard.set(gatewayToken, forKey: "gatewayToken") }
     }
     @Published var selectedAgentId: String {
         didSet { UserDefaults.standard.set(selectedAgentId, forKey: "selectedAgentId") }
@@ -18,13 +15,16 @@ class SettingsStore: ObservableObject {
     @Published var streamingEnabled: Bool {
         didSet { UserDefaults.standard.set(streamingEnabled, forKey: "streamingEnabled") }
     }
+    @Published var gatewayProfile: String {
+        didSet { UserDefaults.standard.set(gatewayProfile, forKey: "gatewayProfile") }
+    }
 
     init() {
-        // Default to Mac mini's local IP — update in Settings if needed
-        self.gatewayURL = UserDefaults.standard.string(forKey: "gatewayURL") ?? "http://192.168.7.126:18789"
+        self.gatewayURL = UserDefaults.standard.string(forKey: "gatewayURL") ?? "http://100.64.0.1:18789"
         self.gatewayToken = UserDefaults.standard.string(forKey: "gatewayToken") ?? ""
         self.selectedAgentId = UserDefaults.standard.string(forKey: "selectedAgentId") ?? "main"
-        self.streamingEnabled = UserDefaults.standard.bool(forKey: "streamingEnabled") != false
+        self.streamingEnabled = UserDefaults.standard.object(forKey: "streamingEnabled") as? Bool ?? true
+        self.gatewayProfile = UserDefaults.standard.string(forKey: "gatewayProfile") ?? "tailscale"
     }
 
     var selectedAgent: Agent {
@@ -33,5 +33,16 @@ class SettingsStore: ObservableObject {
 
     var isConfigured: Bool {
         !gatewayURL.isEmpty && !gatewayToken.isEmpty
+    }
+
+    func applyProfile(_ profile: String) {
+        switch profile {
+        case "lan":
+            if gatewayURL.isEmpty || gatewayURL.contains("100.") { gatewayURL = "http://192.168.1.10:18789" }
+        case "tailscale":
+            if gatewayURL.isEmpty || gatewayURL.contains("192.168") { gatewayURL = "http://100.64.0.1:18789" }
+        default:
+            break
+        }
     }
 }
